@@ -2,7 +2,9 @@
   "jspm": {
     "dependencies": {
       "lodash": "npm:lodash@^3.10.1",
-      "react": "npm:react@^0.13.3"
+      "react": "npm:react@^0.13.3",
+      "socket.io": "npm:socket.io@^1.3.7",
+      "socket.io-client": "npm:socket.io-client@^1.3.7"
     },
     "devDependencies": {
       "babel": "npm:babel-core@^5.8.24",

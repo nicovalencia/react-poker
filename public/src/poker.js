@@ -1,4 +1,5 @@
 import React from 'react';
+import io from 'socket.io-client';
 
 import Header from 'src/components/header';
 import Clock from 'src/components/clock';
@@ -8,6 +9,8 @@ let USER = {
   name: 'Nico Valencia',
   status: 'spectating'
 };
+
+const socket = io();
 
 class App extends React.Component {
   render() {
