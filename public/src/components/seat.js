@@ -6,7 +6,7 @@ import SeatStore from 'src/stores/seat-store';
 
 function getStateFromStores(props) {
   return {
-    user: UserStore.get(),
+    user: UserStore.getUser(),
     seat: SeatStore.get(props._id)
   };
 }

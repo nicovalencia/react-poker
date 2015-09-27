@@ -4,7 +4,7 @@ import UserStore from 'src/stores/user-store';
 
 function getStateFromStores() {
   return {
-    user: UserStore.get()
+    user: UserStore.getUser()
   };
 }
 
@@ -50,7 +50,7 @@ class Profile extends React.Component {
       nameElement = (
         <input type="text" name="name" defaultValue={this.state.user.name} />
       );
-    } else {
+    } else if (this.state.user) {
       action = 'Edit';
       actionHandler = this.edit.bind(this);
       nameElement = (

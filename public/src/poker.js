@@ -1,12 +1,24 @@
 import React from 'react';
-import io from 'socket.io-client';
+import request from 'superagent';
 
 import Header from 'src/components/header';
 import Profile from 'src/components/profile';
 import Clock from 'src/components/clock';
 import Table from 'src/components/table';
+import UserList from 'src/components/user-list';
 
-const socket = io();
+import UserStore from 'src/stores/user-store';
+
+// basic auth:
+let token = localStorage.getItem('token');
+request
+  .post('/sessions')
+  .send({ token })
+  .set('Accept', 'application/json')
+  .end((err, resp) => {
+    localStorage.setItem('token', resp.body.session.token);
+    UserStore.bootstrap();
+  });
 
 class App extends React.Component {
 
@@ -17,6 +29,7 @@ class App extends React.Component {
         <Profile />
         <Clock />
         <Table />
+        <UserList />
       </div>
     );
   }

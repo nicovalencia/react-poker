@@ -1,19 +1,46 @@
 import UserDispatcher from 'src/dispatchers/user-dispatcher';
 import ActionTypes from 'src/constants/user-constants';
 import EventEmitter from 'events';
+import request from 'superagent';
+import _ from 'lodash';
 
 const CHANGE_EVENT = 'change';
 
-var _user = {
-  name: 'New User'
-};
+let _users = [];
+let _userId = null;
 
 function _setName(name) {
-  console.log(`websocket: set name to ${name}`);
-  _user.name = name;
+  request
+    .post('/changeName')
+    .set('X-TOKEN', localStorage.getItem('token'))
+    .send({
+      name: name
+    })
+    .end();
+  let user = userStoreInstance.getUser();
+  user.name = name;
 }
 
 class UserStore extends EventEmitter {
+
+  bootstrap() {
+    // load _userId:
+    request
+      .get('/user')
+      .set('X-TOKEN', localStorage.getItem('token'))
+      .end((err, resp) => {
+        _userId = resp.body.user.id;
+        this.emitChange();
+      });
+
+    // load _users:
+    request
+      .get('/users')
+      .end((err, resp) => {
+        _users = resp.body.users;
+        this.emitChange();
+      });
+  }
 
   emitChange() {
     this.emit(CHANGE_EVENT);
@@ -27,8 +54,18 @@ class UserStore extends EventEmitter {
     this.removeListener(CHANGE_EVENT, callback);
   }
 
-  get() {
-    return _user;
+  get(id) {
+    return _.find(_users, { id: id }) || {
+      name: 'Loading User...'
+    };
+  }
+
+  getUser() {
+    return this.get(_userId);
+  }
+
+  getAll() {
+    return _users;
   }
 
 }
