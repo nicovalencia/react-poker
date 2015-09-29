@@ -4,52 +4,35 @@ import ioServer from 'socket.io';
 import _ from 'lodash';
 import bodyParser from 'body-parser';
 
+import auth from './middleware/auth';
+import Session from './models/session';
+
 const app = express();
 const server = http.Server(app);
 const io = ioServer(server);
 
 app.use(express.static('../public'));
 app.use(bodyParser.json());
-
-let _sessions = [];
-
-function findSession(token) {
-  return _.find(_sessions, { token });
-}
-
-let userIdCounter = 1;
-function createSession() {
-  let session = {
-    token: `${_.random(1e10)}-${_.random(1e10)}-${_.random(1e10)}`,
-    user: {
-      id: userIdCounter,
-      name: `New Player ${userIdCounter}`
-    }
-  };
-  userIdCounter++;
-  _sessions.push(session);
-  return session;
-}
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(auth);
 
 app.post('/sessions', (req, res) => {
-  let session = _.find(_sessions, { token: req.body.token }) || createSession();
+  let session = Session.findOrCreate({ token: req.body.token });
   res.json({ session });
 });
 
 app.post('/changeName', (req, res) => {
-  let session = findSession(req.headers['x-token']);
-  session.user.name = req.body.name;
-  res.json({ user: session.user })
+  req.currentSession.user.name = req.body.name;
+  res.json({ user: req.currentSession.user })
 });
 
 app.get('/user', (req, res) => {
-  let session = findSession(req.headers['x-token']);
-  res.json({ user: session.user })
+  res.json({ user: req.currentSession.user })
 });
 
 app.get('/users', (req, res) => {
   res.json({
-    users: _.pluck(_sessions, 'user')
+    users: _.pluck(Session.getAll(), 'user')
   });
 });
 

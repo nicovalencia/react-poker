@@ -1,8 +1,9 @@
 import UserDispatcher from 'src/dispatchers/user-dispatcher';
 import ActionTypes from 'src/constants/user-constants';
 import EventEmitter from 'events';
-import request from 'superagent';
 import _ from 'lodash';
+
+import UserApi from 'src/api/user-api';
 
 const CHANGE_EVENT = 'change';
 
@@ -10,14 +11,8 @@ let _users = [];
 let _userId = null;
 
 function _setName(name) {
-  request
-    .post('/changeName')
-    .set('X-TOKEN', localStorage.getItem('token'))
-    .send({
-      name: name
-    })
-    .end();
   let user = userStoreInstance.getUser();
+  UserApi.changeName(name);
   user.name = name;
 }
 
@@ -25,21 +20,16 @@ class UserStore extends EventEmitter {
 
   bootstrap() {
     // load _userId:
-    request
-      .get('/user')
-      .set('X-TOKEN', localStorage.getItem('token'))
-      .end((err, resp) => {
-        _userId = resp.body.user.id;
-        this.emitChange();
-      });
+    UserApi.getCurrent().then((user) => {
+      _userId = user.id;
+      this.emitChange();
+    });
 
     // load _users:
-    request
-      .get('/users')
-      .end((err, resp) => {
-        _users = resp.body.users;
-        this.emitChange();
-      });
+    UserApi.getAll().then((users) => {
+      _users = users;
+      this.emitChange();
+    });
   }
 
   emitChange() {

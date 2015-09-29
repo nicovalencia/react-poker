@@ -1,5 +1,6 @@
 import React from 'react';
-import request from 'superagent';
+
+import SessionApi from 'src/api/session-api';
 
 import Header from 'src/components/header';
 import Profile from 'src/components/profile';
@@ -9,16 +10,11 @@ import UserList from 'src/components/user-list';
 
 import UserStore from 'src/stores/user-store';
 
-// basic auth:
-let token = localStorage.getItem('token');
-request
-  .post('/sessions')
-  .send({ token })
-  .set('Accept', 'application/json')
-  .end((err, resp) => {
-    localStorage.setItem('token', resp.body.session.token);
-    UserStore.bootstrap();
-  });
+// session:
+SessionApi.bootstrap().then((session) => {
+  localStorage.setItem('token', session.token);
+  UserStore.bootstrap();
+});
 
 class App extends React.Component {
 

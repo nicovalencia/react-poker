@@ -23,6 +23,7 @@ System.config({
     "flux": "npm:flux@2.1.1",
     "lodash": "npm:lodash@3.10.1",
     "react": "npm:react@0.13.3",
+    "reqwest": "npm:reqwest@2.0.4",
     "socket.io": "npm:socket.io@1.3.7",
     "socket.io-client": "npm:socket.io-client@1.3.7",
     "superagent": "npm:superagent@1.4.0",
@@ -562,6 +563,12 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.1",
       "stream": "github:jspm/nodelibs-stream@0.1.0",
       "string_decoder": "npm:string_decoder@0.10.31"
+    },
+    "npm:reqwest@2.0.4": {
+      "child_process": "github:jspm/nodelibs-child_process@0.1.0",
+      "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "process": "github:jspm/nodelibs-process@0.1.1",
+      "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
     "npm:ripemd160@1.0.1": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
