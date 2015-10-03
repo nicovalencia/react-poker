@@ -4,7 +4,7 @@ import ioServer from 'socket.io';
 import _ from 'lodash';
 import bodyParser from 'body-parser';
 
-import auth from './middleware/auth';
+import {authorize} from './middleware/auth';
 import Session from './models/session';
 import Seat from './models/seat';
 import Table from './models/table';
@@ -18,7 +18,6 @@ const io = ioServer(server);
 app.use(express.static('../public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(auth);
 
 // Setup Table:
 
@@ -31,14 +30,14 @@ app.post('/sessions', (req, res) => {
   res.json({ session });
 });
 
-app.post('/changeName', (req, res) => {
+app.post('/changeName', authorize, (req, res) => {
   let user = req.currentSession.user;
   user.name = req.body.name;
   _table.broadcast('CHANGE_NAME', user);
   res.json({ user: user })
 });
 
-app.get('/user', (req, res) => {
+app.get('/user', authorize, (req, res) => {
   res.json({ user: req.currentSession.user })
 });
 
@@ -54,13 +53,9 @@ app.get('/seats', (req, res) => {
   });
 });
 
-app.post('/sitInSeat', (req, res) => {
+app.post('/sitInSeat', authorize, (req, res) => {
   let seat = Seat.find(req.body.seat.id);
   if (seat && seat.userSit(req.currentSession.user)) {
-    _table.broadcast('USER_SIT', {
-      user: req.currentSession.user,
-      seat
-    });
     res.json({ ok: true });
   } else {
     res.status(500).json({ error: "Cannot sit in seat" });
@@ -70,10 +65,6 @@ app.post('/sitInSeat', (req, res) => {
 app.post('/standUpFromSeat', (req, res) => {
   let seat = Seat.find(req.body.seat.id);
   if (seat && seat.userStand()) {
-    _table.broadcast('USER_STAND', {
-      user: req.currentSession.user,
-      seat
-    });
     res.json({ ok: true });
   } else {
     res.status(500).json({ error: "Cannot stand up from seat" });
@@ -84,6 +75,17 @@ io.on('connection', (socket) => {
 	// connect:
   console.log(`User connected [${socket.client.conn.id}]`);
   _table.addClient(socket);
+
+  // authenticate:
+  socket.on('AUTHENTICATE', (token) => {
+    let session = Session.find({ token });
+    if (session) {
+      _table.identifyConnection(socket, session.user);
+    } else {
+      console.log(`Connection [${socket.client.conn.id}] tried authenticating without session. Disconnecting...`);
+      socket.disconnect();
+    }
+  });
 
   // disconnect:
   socket.on('disconnect', () => {

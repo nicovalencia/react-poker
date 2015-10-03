@@ -10,6 +10,25 @@ const CHANGE_EVENT = 'change';
 let _users = [];
 let _currentUserId = null;
 
+function _addUser(action) {
+  let currentUser = userStoreInstance.getCurrentUser();
+
+  if (currentUser.id !== action.user.id) {
+    userStoreInstance.addUser(action.user);
+  }
+}
+
+function _removeUser(action) {
+  let currentUser = userStoreInstance.getCurrentUser();
+
+  if (currentUser.id === action.user.id) {
+    // user left from another browser or was booted:
+    location.reload();
+  } else {
+    userStoreInstance.removeUser(action.user);
+  }
+}
+
 function _changeName(action) {
   let currentUser = userStoreInstance.getCurrentUser();
 
@@ -67,6 +86,21 @@ class UserStore extends EventEmitter {
     return _users;
   }
 
+  addUser(attrs) {
+    let user = _.find(_users, attrs);
+    if (user) {
+      Object.assign(user, attrs);
+    } else {
+      _users.push(attrs);
+    }
+    this.emitChange();
+  }
+
+  removeUser(attrs) {
+    _.remove(_users, attrs);
+    this.emitChange();
+  }
+
 }
 
 let userStoreInstance = new UserStore();
@@ -74,6 +108,16 @@ let userStoreInstance = new UserStore();
 userStoreInstance.dispatchToken = UserDispatcher.register(function(action) {
 
   switch(action.type) {
+
+    case ActionTypes.JOINED:
+      _addUser(action);
+      userStoreInstance.emitChange();
+      break;
+
+    case ActionTypes.LEFT:
+      _removeUser(action);
+      userStoreInstance.emitChange();
+      break;
 
     case ActionTypes.CHANGE_NAME:
       _changeName(action);
