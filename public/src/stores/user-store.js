@@ -8,10 +8,10 @@ import UserApi from 'src/api/user-api';
 const CHANGE_EVENT = 'change';
 
 let _users = [];
-let _userId = null;
+let _currentUserId = null;
 
 function _setName(name) {
-  let user = userStoreInstance.getUser();
+  let user = userStoreInstance.getCurrentUser();
   UserApi.changeName(name);
   user.name = name;
 }
@@ -19,9 +19,9 @@ function _setName(name) {
 class UserStore extends EventEmitter {
 
   bootstrap() {
-    // load _userId:
+    // load _currentUserId:
     UserApi.getCurrent().then((user) => {
-      _userId = user.id;
+      _currentUserId = user.id;
       this.emitChange();
     });
 
@@ -50,8 +50,8 @@ class UserStore extends EventEmitter {
     };
   }
 
-  getUser() {
-    return this.get(_userId);
+  getCurrentUser() {
+    return this.get(_currentUserId);
   }
 
   getAll() {

@@ -3,26 +3,54 @@ import ActionTypes from 'src/constants/seat-constants';
 import EventEmitter from 'events';
 import _ from 'lodash';
 
+import SeatApi from 'src/api/seat-api';
+import UserStore from 'src/stores/user-store';
+
 const CHANGE_EVENT = 'change';
 
-var _seats = _.times(6, (i) => {
-  return {
-    id: i+1,
-    player: null
-  };
-});
+var _seats = [];
 
-function _playerSit(seat, player) {
-  console.log(`websocket: ${player.name} sat in seat #${seat.id}`);
-  seat.player = player;
+function _userSit(seat, user) {
+
+  let currentUser = UserStore.getCurrentUser();
+
+  if (currentUser === user) {
+    console.log(`websocket: YOU sat in seat #${seat.id}`);
+    SeatApi.sitInSeat(seat);
+  } else {
+    console.log(`websocket: ${user.name} sat in seat #${seat.id}`);
+  }
+
+  seat.user = user;
 }
 
-function _playerStand(seat) {
-  console.log(`websocket: ${seat.player.name} stood up from seat #${seat.id}`);
-  seat.player = null;
+function _userStand(seat, user) {
+
+  let currentUser = UserStore.getCurrentUser();
+
+  if (currentUser === user) {
+    console.log(`websocket: YOU stood up from seat #${seat.id}`);
+    SeatApi.standUpFromSeat(seat);
+  } else {
+    console.log(`websocket: ${user.name} stood up from seat #${seat.id}`);
+  }
+
+  seat.user = null;
 }
 
 class SeatStore extends EventEmitter {
+
+  bootstrap() {
+    // load _seats:
+    SeatApi.getAll().then((seats) => {
+      seats.forEach((seat) => {
+        if (seat.user)
+          seat.user = UserStore.get(seat.user.id);
+      });
+      _seats = seats;
+      this.emitChange();
+    });
+  }
 
   emitChange() {
     this.emit(CHANGE_EVENT);
@@ -44,12 +72,12 @@ class SeatStore extends EventEmitter {
     return _seats;
   }
 
-  getPlayer(id) {
-    return this.get(id).player;
+  getUser(id) {
+    return this.get(id).user;
   }
 
-  isPlayerSitting(player) {
-    return _.any(_seats, { player })
+  isUserSitting(user) {
+    return _.any(_seats, { user })
   }
 
 }
@@ -62,13 +90,13 @@ seatStoreInstance.dispatchToken = SeatDispatcher.register(function(action) {
 
   switch(action.type) {
 
-    case ActionTypes.PLAYER_SIT:
-      _playerSit(seat, action.player);
+    case ActionTypes.USER_SIT:
+      _userSit(seat, action.user);
       seatStoreInstance.emitChange();
       break;
 
-    case ActionTypes.PLAYER_STAND:
-      _playerStand(seat);
+    case ActionTypes.USER_STAND:
+      _userStand(seat, action.user);
       seatStoreInstance.emitChange();
       break;
 

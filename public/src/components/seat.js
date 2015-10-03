@@ -6,7 +6,7 @@ import SeatStore from 'src/stores/seat-store';
 
 function getStateFromStores(props) {
   return {
-    user: UserStore.getUser(),
+    currentUser: UserStore.getCurrentUser(),
     seat: SeatStore.get(props._id)
   };
 }
@@ -19,14 +19,17 @@ class Seat extends React.Component {
   }
 
   sit() {
-    SeatActionCreators.playerSit({
+    SeatActionCreators.userSit({
       id: this.props._id,
-      player: this.state.user
+      user: this.state.currentUser
     });
   }
 
   stand() {
-    SeatActionCreators.playerStand(this.props._id);
+    SeatActionCreators.userStand({
+      id: this.props._id,
+      user: this.state.currentUser
+    });
   }
 
   componentDidMount() {
@@ -43,21 +46,29 @@ class Seat extends React.Component {
 
     let actionButton;
 
-    if (this.state.seat.player === this.state.user) {
-      // user is sitting at this seat:
+    if (this.state.seat.user === this.state.currentUser) {
+
+      // current user is sitting at this seat:
       actionButton = (
         <button type="button" onClick={this.stand.bind(this)}>Stand Up</button>
       );
-    } else if (!SeatStore.isPlayerSitting(this.state.user)) {
-      // user is not sitting in any seats:
+
+    } else if (
+      !this.state.seat.user &&
+      !SeatStore.isUserSitting(this.state.currentUser)
+    ) {
+      
+      // seat is empty and...
+      // current user is standing up
       actionButton = (
         <button type="button" onClick={this.sit.bind(this)}>Sit Here</button>
       );
+
     }
 
     return (
       <div>
-        <span>Seat {this.props._id}: {this.state.seat.player ? this.state.seat.player.name : 'EMPTY'}</span>
+        <span>Seat {this.props._id}: {this.state.seat.user ? this.state.seat.user.name : 'EMPTY'}</span>
         {actionButton}
       </div>
     );

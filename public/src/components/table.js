@@ -7,7 +7,8 @@ import SeatStore from 'src/stores/seat-store';
 
 function getStateFromStores() {
   return {
-    user: UserStore.get()
+    user: UserStore.get(),
+    seats: SeatStore.getAll()
   };
 }
 
@@ -20,9 +21,17 @@ class Table extends React.Component {
     }, getStateFromStores());
   }
 
+  componentDidMount() {
+    SeatStore.addChangeListener(this._onChange.bind(this));
+  }
+
+  componentWillUnmount() {
+    SeatStore.removeChangeListener(this._onChange.bind(this));
+  }
+
   render() {
 
-    let seats = _.map(SeatStore.getAll(), (seat) => {
+    let seats = _.map(this.state.seats, (seat) => {
       return (
         <Seat _id={seat.id} key={seat.id} />
       );
@@ -34,6 +43,10 @@ class Table extends React.Component {
         {seats}
       </div>
     );
+  }
+
+  _onChange() {
+    this.setState(getStateFromStores());
   }
 
 }

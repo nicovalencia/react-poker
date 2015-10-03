@@ -9,11 +9,13 @@ import Table from 'src/components/table';
 import UserList from 'src/components/user-list';
 
 import UserStore from 'src/stores/user-store';
+import SeatStore from 'src/stores/seat-store';
 
 // session:
 SessionApi.bootstrap().then((session) => {
   localStorage.setItem('token', session.token);
   UserStore.bootstrap();
+  SeatStore.bootstrap();
 });
 
 class App extends React.Component {

@@ -4,7 +4,7 @@ import UserStore from 'src/stores/user-store';
 
 function getStateFromStores() {
   return {
-    user: UserStore.getUser()
+    user: UserStore.getCurrentUser()
   };
 }
 
