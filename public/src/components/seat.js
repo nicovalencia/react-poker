@@ -19,17 +19,15 @@ class Seat extends React.Component {
   }
 
   sit() {
-    SeatActionCreators.userSit({
-      id: this.props._id,
-      user: this.state.currentUser
-    });
+    let seat = this.state.seat;
+    let user = this.state.currentUser;
+    SeatActionCreators.userSit(seat, user);
   }
 
   stand() {
-    SeatActionCreators.userStand({
-      id: this.props._id,
-      user: this.state.currentUser
-    });
+    let seat = this.state.seat;
+    let user = this.state.currentUser;
+    SeatActionCreators.userStand(seat, user);
   }
 
   componentDidMount() {

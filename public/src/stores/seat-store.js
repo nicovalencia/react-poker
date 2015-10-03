@@ -10,32 +10,36 @@ const CHANGE_EVENT = 'change';
 
 var _seats = [];
 
-function _userSit(seat, user) {
+function _userSit(action) {
 
   let currentUser = UserStore.getCurrentUser();
 
-  if (currentUser === user) {
-    console.log(`You sat in seat #${seat.id}`);
-    SeatApi.sitInSeat(seat);
+  if (currentUser === action.user) {
+    console.log(`You sat in seat #${action.seat.id}`);
+
+    if (!action.external)
+      SeatApi.sitInSeat(action.seat);
   } else {
-    console.log(`${user.name} sat in seat #${seat.id}`);
+    console.log(`${action.user.name} sat in seat #${action.seat.id}`);
   }
 
-  seat.user = user;
+  action.seat.user = action.user;
 }
 
-function _userStand(seat, user) {
+function _userStand(action) {
 
   let currentUser = UserStore.getCurrentUser();
 
-  if (currentUser === user) {
-    console.log(`You stood up from seat #${seat.id}`);
-    SeatApi.standUpFromSeat(seat);
+  if (currentUser === action.user) {
+    console.log(`You stood up from seat #${action.seat.id}`);
+
+    if (!action.external)
+      SeatApi.standUpFromSeat(action.seat);
   } else {
-    console.log(`${user.name} stood up from seat #${seat.id}`);
+    console.log(`${action.user.name} stood up from seat #${action.seat.id}`);
   }
 
-  seat.user = null;
+  action.seat.user = null;
 }
 
 class SeatStore extends EventEmitter {
@@ -86,17 +90,15 @@ let seatStoreInstance = new SeatStore();
 
 seatStoreInstance.dispatchToken = SeatDispatcher.register(function(action) {
 
-  let seat = seatStoreInstance.get(action.id);
-
   switch(action.type) {
 
     case ActionTypes.USER_SIT:
-      _userSit(seat, action.user);
+      _userSit(action);
       seatStoreInstance.emitChange();
       break;
 
     case ActionTypes.USER_STAND:
-      _userStand(seat, action.user);
+      _userStand(action);
       seatStoreInstance.emitChange();
       break;
 

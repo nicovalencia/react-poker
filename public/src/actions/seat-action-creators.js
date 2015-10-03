@@ -3,19 +3,21 @@ import ActionTypes from 'src/constants/seat-constants';
 
 let SeatActionCreators = {
 
-  userSit(opts) {
+  userSit(seat, user, external) {
     SeatDispatcher.dispatch({
       type: ActionTypes.USER_SIT,
-      id: opts.id,
-      user: opts.user
+      seat,
+      user,
+      external
     });
   },
 
-  userStand(opts) {
+  userStand(seat, user, external) {
     SeatDispatcher.dispatch({
       type: ActionTypes.USER_STAND,
-      id: opts.id,
-      user: opts.user
+      seat,
+      user,
+      external
     });
   }
 

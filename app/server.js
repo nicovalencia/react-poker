@@ -68,6 +68,10 @@ app.get('/seats', (req, res) => {
 app.post('/sitInSeat', (req, res) => {
   let seat = Seat.find(req.body.seat.id);
   if (seat && seat.userSit(req.currentSession.user)) {
+    broadcast('USER_SIT', {
+      user: req.currentSession.user,
+      seat
+    });
     res.json({ ok: true });
   } else {
     res.status(500).json({ error: "Cannot sit in seat" });
@@ -77,6 +81,10 @@ app.post('/sitInSeat', (req, res) => {
 app.post('/standUpFromSeat', (req, res) => {
   let seat = Seat.find(req.body.seat.id);
   if (seat && seat.userStand()) {
+    broadcast('USER_STAND', {
+      user: req.currentSession.user,
+      seat
+    });
     res.json({ ok: true });
   } else {
     res.status(500).json({ error: "Cannot stand up from seat" });
