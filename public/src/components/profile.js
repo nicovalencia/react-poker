@@ -27,7 +27,8 @@ class Profile extends React.Component {
     this.setState({
       isEditing: false
     });
-    UserActionCreators.changeName(event.target.name.value);
+    let user = UserStore.getCurrentUser();
+    UserActionCreators.changeName(user, event.target.name.value);
   }
 
   componentDidMount() {

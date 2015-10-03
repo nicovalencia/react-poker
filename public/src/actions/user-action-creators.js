@@ -3,10 +3,12 @@ import ActionTypes from 'src/constants/user-constants';
 
 let UserActionCreators = {
 
-  changeName(name) {
+  changeName(user, name, external) {
     UserDispatcher.dispatch({
       type: ActionTypes.CHANGE_NAME,
-      name: name
+      user,
+      name,
+      external
     });
   }
 

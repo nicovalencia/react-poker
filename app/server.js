@@ -12,18 +12,30 @@ const app = express();
 const server = http.Server(app);
 const io = ioServer(server);
 
+// Setup Client Pool:
+
+let _pool = [];
+
+function broadcast(event, msg) {
+  _pool.forEach((client) => {
+    client.emit(event, msg);
+  });
+}
+
 // Setup Table:
 
 _.times(6, ()=> {
   return Seat.create();
 });
 
-// Setup app:
+// Setup App:
 
 app.use(express.static('../public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(auth);
+
+// Setup Routes:
 
 app.post('/sessions', (req, res) => {
   let session = Session.findOrCreate({ token: req.body.token });
@@ -31,8 +43,10 @@ app.post('/sessions', (req, res) => {
 });
 
 app.post('/changeName', (req, res) => {
-  req.currentSession.user.name = req.body.name;
-  res.json({ user: req.currentSession.user })
+  let user = req.currentSession.user;
+  user.name = req.body.name;
+  broadcast('CHANGE_NAME', user);
+  res.json({ user: user })
 });
 
 app.get('/user', (req, res) => {
@@ -72,10 +86,12 @@ app.post('/standUpFromSeat', (req, res) => {
 io.on('connection', (socket) => {
 	// connect:
   console.log(`User connected [${socket.client.conn.id}]`);
+  _pool.push(socket);
 
   // disconnect:
   socket.on('disconnect', () => {
     console.log(`User disconnected [${socket.client.conn.id}]`);
+    _pool.splice(_pool.indexOf(socket), 1);
   });
 });
 

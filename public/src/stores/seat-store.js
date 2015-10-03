@@ -15,10 +15,10 @@ function _userSit(seat, user) {
   let currentUser = UserStore.getCurrentUser();
 
   if (currentUser === user) {
-    console.log(`websocket: YOU sat in seat #${seat.id}`);
+    console.log(`You sat in seat #${seat.id}`);
     SeatApi.sitInSeat(seat);
   } else {
-    console.log(`websocket: ${user.name} sat in seat #${seat.id}`);
+    console.log(`${user.name} sat in seat #${seat.id}`);
   }
 
   seat.user = user;
@@ -29,10 +29,10 @@ function _userStand(seat, user) {
   let currentUser = UserStore.getCurrentUser();
 
   if (currentUser === user) {
-    console.log(`websocket: YOU stood up from seat #${seat.id}`);
+    console.log(`You stood up from seat #${seat.id}`);
     SeatApi.standUpFromSeat(seat);
   } else {
-    console.log(`websocket: ${user.name} stood up from seat #${seat.id}`);
+    console.log(`${user.name} stood up from seat #${seat.id}`);
   }
 
   seat.user = null;

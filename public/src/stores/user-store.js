@@ -10,10 +10,19 @@ const CHANGE_EVENT = 'change';
 let _users = [];
 let _currentUserId = null;
 
-function _setName(name) {
-  let user = userStoreInstance.getCurrentUser();
-  UserApi.changeName(name);
-  user.name = name;
+function _changeName(action) {
+  let currentUser = userStoreInstance.getCurrentUser();
+
+  if (currentUser === action.user) {
+    console.log(`You changed your name to ${action.name}`);
+
+    if (!action.external)
+      UserApi.changeName(action.name);
+  } else {
+    console.log(`${action.user.name} changed their name to ${action.name}`);
+  }
+
+  action.user.name = action.name;
 }
 
 class UserStore extends EventEmitter {
@@ -67,7 +76,7 @@ userStoreInstance.dispatchToken = UserDispatcher.register(function(action) {
   switch(action.type) {
 
     case ActionTypes.CHANGE_NAME:
-      _setName(action.name);
+      _changeName(action);
       userStoreInstance.emitChange();
       break;
 

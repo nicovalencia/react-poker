@@ -11,6 +11,8 @@ import UserList from 'src/components/user-list';
 import UserStore from 'src/stores/user-store';
 import SeatStore from 'src/stores/seat-store';
 
+import socket from 'src/socket';
+
 // session:
 SessionApi.bootstrap().then((session) => {
   localStorage.setItem('token', session.token);
