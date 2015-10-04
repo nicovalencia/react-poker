@@ -14,13 +14,13 @@ function _userSit(action) {
 
   let currentUser = UserStore.getCurrentUser();
 
-  if (currentUser === action.user) {
-    console.log(`You sat in seat #${action.seat.id}`);
+  if (currentUser._id === action.user._id) {
+    console.log(`You sat in seat #${action.seat._id}`);
 
     if (!action.external)
       SeatApi.sitInSeat(action.seat);
   } else {
-    console.log(`${action.user.name} sat in seat #${action.seat.id}`);
+    console.log(`${action.user.name} sat in seat #${action.seat._id}`);
   }
 
   action.seat.user = action.user;
@@ -30,13 +30,13 @@ function _userStand(action) {
 
   let currentUser = UserStore.getCurrentUser();
 
-  if (currentUser === action.user) {
-    console.log(`You stood up from seat #${action.seat.id}`);
+  if (currentUser._id === action.user._id) {
+    console.log(`You stood up from seat #${action.seat._id}`);
 
     if (!action.external)
       SeatApi.standUpFromSeat(action.seat);
   } else {
-    console.log(`${action.user.name} stood up from seat #${action.seat.id}`);
+    console.log(`${action.user.name} stood up from seat #${action.seat._id}`);
   }
 
   action.seat.user = null;
@@ -49,7 +49,7 @@ class SeatStore extends EventEmitter {
     SeatApi.getAll().then((seats) => {
       seats.forEach((seat) => {
         if (seat.user)
-          seat.user = UserStore.get(seat.user.id);
+          seat.user = UserStore.get(seat.user._id);
       });
       _seats = seats;
       this.emitChange();
@@ -68,16 +68,12 @@ class SeatStore extends EventEmitter {
     this.removeListener(CHANGE_EVENT, callback);
   }
 
-  get(id) {
-    return _.find(_seats, { id: id });
+  get(_id) {
+    return _.find(_seats, { _id });
   }
 
   getAll() {
     return _seats;
-  }
-
-  getUser(id) {
-    return this.get(id).user;
   }
 
   isUserSitting(user) {
@@ -87,7 +83,7 @@ class SeatStore extends EventEmitter {
 }
 
 let seatStoreInstance = new SeatStore();
-
+seatStoreInstance.setMaxListeners(20);
 seatStoreInstance.dispatchToken = SeatDispatcher.register(function(action) {
 
   switch(action.type) {

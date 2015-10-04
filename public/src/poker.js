@@ -15,7 +15,6 @@ import Socket from 'src/socket';
 
 // session:
 SessionApi.bootstrap().then((session) => {
-  localStorage.setItem('token', session.token);
   new Socket(session.token);
   UserStore.bootstrap();
   SeatStore.bootstrap();

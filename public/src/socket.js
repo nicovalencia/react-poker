@@ -36,19 +36,19 @@ class Socket {
     });
 
     this.io.on('CHANGE_NAME', (resp) => {
-      let user = UserStore.get(resp.id);
+      let user = UserStore.get(resp._id);
       UserActionCreators.changeName(user, resp.name, true);
     });
 
     this.io.on('USER_SIT', (resp) => {
       let seat = SeatStore.get(resp.seat.id);
-      let user = UserStore.get(resp.user.id);
+      let user = UserStore.get(resp.user._id);
       SeatActionCreators.userSit(seat, user, true);
     });
 
     this.io.on('USER_STAND', (resp) => {
       let seat = SeatStore.get(resp.seat.id);
-      let user = UserStore.get(resp.user.id);
+      let user = UserStore.get(resp.user._id);
       SeatActionCreators.userStand(seat, user, true);
     });
 

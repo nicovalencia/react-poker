@@ -1,71 +1,94 @@
+import mongoose from 'mongoose';
 import _ from 'lodash';
 
-import Seat from './seat';
+import {seatSchema, Seat} from './seat';
 
-class Table {
+let tableSchema = mongoose.Schema({
+  name: String,
+  clientPool: {
+    type: Array,
+    default: []
+  },
+  seats: [seatSchema]
+});
 
-  constructor() {
+tableSchema.statics.build = function build(opts) {
 
-    // clients:
-    this.clientPool = [];
+  console.log('Building table with seats...');
+  return new Table(Object.assign({
+    seats: _.times(6, (seat) => {
+      return { position: seat };
+    })
+  }, opts));
 
-    // seats:
-    this.seats = [];
-    _.times(6, ()=> {
-      this.seats.push(Seat.create({
-        table: this
-      }));
-    });
+};
 
+tableSchema.pre('validate', function(next) {
+
+  if (this.seats.length !== 6) {
+    console.log('Initializing table with seats:');
   }
 
-  findClientBySocket(socket) {
-    return _.find(this.clientPool, (client) => {
-      return client.socket === socket;
-    });
-  }
+  next();
+});
 
-  addClient(socket) {
-    this.clientPool.push({ socket });
+tableSchema.methods.addClient = function addClient(socket, cb) {
+  this.clientPool.push({ socket });
+  this.save((err) => {
+    if (err) cb(err);
+    cb(null, this);
     this.broadcast('CLIENT_JOINED');
-  }
+  });
+};
 
-  hasUser(id) {
-    return _.any(this.clientPool, (client) => {
-      return client.user && client.user.id == id;
-    });
-  }
+tableSchema.methods.findClientBySocket = function findClientBySocket(socket) {
+  return _.find(this.clientPool, (client) => {
+    return client.socket === socket;
+  });
+};
 
-  identifyConnection (socket, user) {
-    let client = this.findClientBySocket(socket);
-    client.user = user;
-    this.broadcast('CLIENT_IDENTIFIED', { user });
-  }
-
-  removeClient(socket) {
-
-    let client = this.findClientBySocket(socket);
-
-    // handle seat:
-    let seat = Seat.findByUser(client.user.id);
-    if (seat) {
-      seat.userStand();
-    }
-
-    // remove client:
-    _.remove(this.clientPool, { socket });
-
-    this.broadcast('CLIENT_LEFT', {
+tableSchema.methods.identifyConnection = function identifyConnection(opts, cb) {
+  let client = this.findClientBySocket(opts.socket);
+  client.user = opts.user;
+  this.save((err) => {
+    if (err) cb(err);
+    cb(null, this);
+    this.broadcast('CLIENT_IDENTIFIED', {
       user: client.user
     });
-  }
+  });
+};
 
-  broadcast(event, msg) {
-    this.clientPool.forEach((client) => {
-      client.socket.emit(event, msg);
+tableSchema.methods.removeClient = function removeClient(socket, cb) {
+  let client = this.findClientBySocket(socket);
+
+  // handle seat:
+  Seat.findOne()
+    .where('user._id').equals(client.user._id)
+    .exec((err, seat) => {
+      if (err) cb(err);
+
+      if (seat) {
+        seat.userStand();
+      }
+
     });
-  }
 
-}
+  // remove client:
+  _.remove(this.clientPool, { socket });
+
+  this.broadcast('CLIENT_LEFT', {
+    user: client.user
+  });
+
+};
+
+tableSchema.methods.broadcast = function broadcast(event, msg) {
+  this.clientPool.forEach((client) => {
+    client.socket.emit(event, msg);
+  });
+};
+
+let Table = mongoose.model('Table', tableSchema);
 
 export default Table;

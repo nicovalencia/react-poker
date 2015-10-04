@@ -1,5 +1,3 @@
-import Session from '../models/session';
-
 export function authorize(req, res, next) {
   Session.findOne()
     .where('token').equals(req.headers['x-token'])

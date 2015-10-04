@@ -13,7 +13,7 @@ let _currentUserId = null;
 function _addUser(action) {
   let currentUser = userStoreInstance.getCurrentUser();
 
-  if (currentUser.id !== action.user.id) {
+  if (currentUser._id !== action.user._id) {
     userStoreInstance.addUser(action.user);
   }
 }
@@ -21,7 +21,7 @@ function _addUser(action) {
 function _removeUser(action) {
   let currentUser = userStoreInstance.getCurrentUser();
 
-  if (currentUser.id === action.user.id) {
+  if (currentUser._id === action.user._id) {
     // user left from another browser or was booted:
     location.reload();
   } else {
@@ -32,7 +32,7 @@ function _removeUser(action) {
 function _changeName(action) {
   let currentUser = userStoreInstance.getCurrentUser();
 
-  if (currentUser === action.user) {
+  if (currentUser.id === action.user.id) {
     console.log(`You changed your name to ${action.name}`);
 
     if (!action.external)
@@ -49,7 +49,7 @@ class UserStore extends EventEmitter {
   bootstrap() {
     // load _currentUserId:
     UserApi.getCurrent().then((user) => {
-      _currentUserId = user.id;
+      _currentUserId = user._id;
       this.emitChange();
     });
 
@@ -72,8 +72,8 @@ class UserStore extends EventEmitter {
     this.removeListener(CHANGE_EVENT, callback);
   }
 
-  get(id) {
-    return _.find(_users, { id: id }) || {
+  get(_id) {
+    return _.find(_users, { _id }) || {
       name: 'Loading User...'
     };
   }
@@ -104,7 +104,7 @@ class UserStore extends EventEmitter {
 }
 
 let userStoreInstance = new UserStore();
-
+userStoreInstance.setMaxListeners(20);
 userStoreInstance.dispatchToken = UserDispatcher.register(function(action) {
 
   switch(action.type) {

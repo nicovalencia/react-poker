@@ -5,8 +5,8 @@ import _ from 'lodash';
 import bodyParser from 'body-parser';
 
 import {authorize} from './middleware/auth';
+import Database from './db/database';
 import Session from './models/session';
-import Seat from './models/seat';
 import Table from './models/table';
 
 const app = express();
@@ -19,81 +19,130 @@ app.use(express.static('../public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Setup Table:
-
-let _table = new Table();
-
 // Setup Routes:
 
-app.post('/sessions', (req, res) => {
-  let session = Session.findOrCreate({ token: req.body.token });
-  res.json({ session });
+app.post('/sessions', (req, res, next) => {
+  Session.findOrCreate(req.body.token).then((session) => {
+    res.json({ session });
+  }).catch(next);
 });
 
-app.post('/changeName', authorize, (req, res) => {
+app.post('/changeName', authorize, (req, res, next) => {
   let user = req.currentSession.user;
-  user.name = req.body.name;
-  _table.broadcast('CHANGE_NAME', user);
-  res.json({ user: user })
+  user.changeName(req.body.name, (err, updatedUser) => {
+    if (err) next(err);
+    _table.broadcast('CHANGE_NAME', updatedUser);
+    res.json({ user: updatedUser })
+  });
 });
 
 app.get('/user', authorize, (req, res) => {
   res.json({ user: req.currentSession.user })
 });
 
-app.get('/users', (req, res) => {
-  res.json({
-    users: _.pluck(Session.getAll(), 'user')
+app.get('/users', (req, res, next) => {
+  Session.find()
+    .populate('user')
+    .exec((err, sessions) => {
+      if (err) next(err);
+      res.json({
+        users: _.pluck(sessions, 'user')
+      });
+    });
+});
+
+app.get('/seats', fetchTable, (req, res, next) => {
+  req.table.seats.find()
+    .populate('user')
+    .exec((err, seats) => {
+      if (err) next(err);
+      res.json({ seats });
+    });
+});
+
+app.post('/sitInSeat', authorize, (req, res, next) => {
+  _table.seats.findById(req.body.seat._id, (err, seat) => {
+    if (err) next(err);
+    seat.userSit(req.currentSession.user, (err) => {
+      if (err) {
+        res.status(500).json({ error: "Cannot sit in seat" });
+      } else {
+        res.json({ ok: true });
+      }
+    });
+
   });
 });
 
-app.get('/seats', (req, res) => {
-  res.json({
-    seats: Seat.getAll()
+app.post('/standUpFromSeat', (req, res, next) => {
+  _table.seats.findById(req.body.seat._id, (err, seat) => {
+    if (err) next(err);
+
+    seat.userStand((err) => {
+      if (err) {
+        res.status(500).json({ error: "Cannot stand up from seat" });
+      } else {
+        res.json({ ok: true });
+      }
+    });
   });
-});
-
-app.post('/sitInSeat', authorize, (req, res) => {
-  let seat = Seat.find(req.body.seat.id);
-  if (seat && seat.userSit(req.currentSession.user)) {
-    res.json({ ok: true });
-  } else {
-    res.status(500).json({ error: "Cannot sit in seat" });
-  }
-});
-
-app.post('/standUpFromSeat', (req, res) => {
-  let seat = Seat.find(req.body.seat.id);
-  if (seat && seat.userStand()) {
-    res.json({ ok: true });
-  } else {
-    res.status(500).json({ error: "Cannot stand up from seat" });
-  }
 });
 
 io.on('connection', (socket) => {
 	// connect:
   console.log(`User connected [${socket.client.conn.id}]`);
-  _table.addClient(socket);
+  _table.addClient(socket, (err) => {
+    if (err) console.log(err);
+  });
 
   // authenticate:
   socket.on('AUTHENTICATE', (token) => {
-    let session = Session.find({ token });
-    if (session) {
-      _table.identifyConnection(socket, session.user);
-    } else {
-      console.log(`Connection [${socket.client.conn.id}] tried authenticating without session. Disconnecting...`);
-      socket.disconnect();
-    }
+    Session.findOne()
+      .where('token').equals(token)
+      .populate('user')
+      .exec((err, session) => {
+        if (session) {
+          _table.identifyConnection({
+            socket: socket,
+            user: session.user
+          }, (err) => {
+            if (err) console.log(err);
+          });
+        } else {
+          console.log(`Connection [${socket.client.conn.id}] tried authenticating without session. Disconnecting...`);
+          socket.disconnect();
+        }
+      });
   });
 
   // disconnect:
   socket.on('disconnect', () => {
     console.log(`User disconnected [${socket.client.conn.id}]`);
-    _table.removeClient(socket);
+    _table.removeClient(socket, (err) => {
+      if (err) console.log(err);
+    });
   });
 });
 
-server.listen(3000, () => {
-  console.log('Booting on http://localhost:3000');
+// Table instance:
+let _table;
+
+let dbName = 'test';
+let db = new Database(dbName);
+
+db.connect((err) => {
+  console.error('Mongoose: error connecting to ${dbName}:', err);
+}, () => {
+  console.log(`Mongoose: connected to ${dbName} successfully!`);
+
+
+  // Setup Table:
+  _table = Table.build({ name: 'Main Table' });
+  _table.save((err) => {
+    server.listen(3000, () => {
+      console.log('Booting server on http://localhost:3000');
+    });
+  });
+
 });
+

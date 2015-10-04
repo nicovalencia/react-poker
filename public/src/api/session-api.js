@@ -9,6 +9,7 @@ class SessionApi {
       method: 'POST',
       data: { token }
     }).then((resp) => {
+      localStorage.setItem('token', resp.session.token);
       return resp.session;
     });
   }

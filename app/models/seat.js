@@ -1,83 +1,76 @@
+import mongoose from 'mongoose';
 import _ from 'lodash';
 
 let _seats = [];
 let seatIdCounter = 1;
 
-class Seat {
+let schema = mongoose.Schema({
+  position: Number,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
+});
 
-  constructor(opts) {
-    this.table = opts.table;
-    this.id = seatIdCounter++;
-    this.user = null;
+schema.statics.create = function(opts, cb) {
+  let seat = new Seat(opts);
+
+  seat.save((err) => {
+    if (err) cb(err);
+    console.log(`seat created ${seat._id}`);
+    cb(null, seat);
+  });
+};
+
+schema.methods.userSit = function userSit(user, cb) {
+  if (!this.user) {
+    this.user = user;
+    this.save((err) => {
+      if (err) cb(err);
+      cb(null, this);
+    });
+  } else {
+    return cb('A user is already sitting in seat!');
   }
 
-  userSit(user) {
+    // if (!this.table.hasUser(user.id)) { // removed method hasUser
+    //   console.error('User is not at table. Cannot sit here.')
+    //   return false;
+    // } else if (this.user) {
+    //   console.error('Another user is sitting at this seat.')
+    //   return false;
+    // } else {
 
-    if (!this.table.hasUser(user.id)) {
-      console.error('User is not at table. Cannot sit here.')
-      return false;
-    } else if (this.user) {
-      console.error('Another user is sitting at this seat.')
-      return false;
-    } else {
-
-      this.user = user;
+    //   this.user = user;
       
-      console.log(`> ${user.name} sat in seat #${this.id}`);
-      this.table.broadcast('USER_SIT', {
-        seat: this,
-        user
-      });
+    //   console.log(`> ${user.name} sat in seat #${this.id}`);
+    //   this.table.broadcast('USER_SIT', {
+    //     seat: this,
+    //     user
+    //   });
 
-      return this;
-    }
+    //   return this;
+    // }
+};
 
-  }
+schema.methods.userStand = function userStand(cb) {
+  this.user = null;
+  this.save((err) => {
+    if (err) cb(err);
+    cb(null, this);
+  });
 
-  userStand() {
+    // this.table.broadcast('USER_STAND', {
+    //   seat: this,
+    //   user: this.user
+    // });
+    // console.log(`> ${this.user.name} stood up from seat #${this.id}`);
 
-    this.table.broadcast('USER_STAND', {
-      seat: this,
-      user: this.user
-    });
-    console.log(`> ${this.user.name} stood up from seat #${this.id}`);
+    // this.user = null;
+    // return this;
+};
 
-    this.user = null;
-    return this;
-  }
+let Seat = mongoose.model('Seat', schema);
 
-  toJSON() {
-    return {
-      id: this.id,
-      user: this.user
-    }
-  }
-
-}
-
-class SeatInterface {
-
-  create(opts) {
-    let seat = new Seat(opts);
-    _seats.push(seat);
-    return seat;
-  }
-
-  find(id) {
-    id = parseInt(id);
-    return _.find(_seats, { id });
-  }
-
-  findByUser(id) {
-    return _.find(_seats, (seat) => {
-      return seat.user && seat.user.id == id;
-    });
-  }
-
-  getAll() {
-    return _seats;
-  }
-
-}
-
-export default new SeatInterface();
+export { schema as seatSchema };
+export default Seat;

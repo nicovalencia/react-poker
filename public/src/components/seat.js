@@ -44,7 +44,10 @@ class Seat extends React.Component {
 
     let actionButton;
 
-    if (this.state.seat.user === this.state.currentUser) {
+    if (
+      this.state.seat.user &&
+      this.state.seat.user._id === this.state.currentUser._id
+    ) {
 
       // current user is sitting at this seat:
       actionButton = (

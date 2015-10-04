@@ -7,7 +7,6 @@ import SeatStore from 'src/stores/seat-store';
 
 function getStateFromStores() {
   return {
-    user: UserStore.get(),
     seats: SeatStore.getAll()
   };
 }
@@ -33,7 +32,7 @@ class Table extends React.Component {
 
     let seats = _.map(this.state.seats, (seat) => {
       return (
-        <Seat _id={seat.id} key={seat.id} />
+        <Seat _id={seat._id} key={seat._id} />
       );
     });
 
