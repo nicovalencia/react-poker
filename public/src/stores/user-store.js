@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import _ from 'lodash';
 
 import UserApi from 'src/api/user-api';
+import TableStore from 'src/stores/table-store';
 
 const CHANGE_EVENT = 'change';
 
@@ -54,10 +55,8 @@ class UserStore extends EventEmitter {
     });
 
     // load _users:
-    UserApi.getAll().then((users) => {
-      _users = users;
-      this.emitChange();
-    });
+    _users = TableStore.getCurrent().users;
+    this.emitChange();
   }
 
   emitChange() {

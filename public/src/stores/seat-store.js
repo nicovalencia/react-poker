@@ -5,6 +5,7 @@ import _ from 'lodash';
 
 import SeatApi from 'src/api/seat-api';
 import UserStore from 'src/stores/user-store';
+import TableStore from 'src/stores/table-store';
 
 const CHANGE_EVENT = 'change';
 
@@ -46,14 +47,8 @@ class SeatStore extends EventEmitter {
 
   bootstrap() {
     // load _seats:
-    SeatApi.getAll().then((seats) => {
-      seats.forEach((seat) => {
-        if (seat.user)
-          seat.user = UserStore.get(seat.user._id);
-      });
-      _seats = seats;
-      this.emitChange();
-    });
+    _seats = TableStore.getCurrent().seats;
+    this.emitChange();
   }
 
   emitChange() {

@@ -1,16 +1,15 @@
-export function authorize(req, res, next) {
-  Session.findOne()
-    .where('token').equals(req.headers['x-token'])
-    .populate('user')
-    .exec((err, session) => {
+import Table from '../models/table';
 
-      if (err) console.log(err);
+export function fetchTable(req, res, next) {
+  Table.findById(req.headers['x-table-id'], (err, table) => {
 
-      req.currentSession = session;
-      if (req.currentSession && req.currentSession.user) {
-        return next();
-      } else {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    });
+    if (err) next(err);
+
+    if (table) {
+      req.table = table;
+      return next();
+    } else {
+      return res.status(404).json({ error: "Could not find table" });
+    }
+  });
 }

@@ -2,15 +2,6 @@ import {authReqwest} from 'src/api/api-helpers';
 
 class SeatApi {
 
-  getAll() {
-    return authReqwest({
-      url: '/seats',
-      method: 'GET'
-    }).then((resp) => {
-      return resp.seats;
-    });
-  }
-
   sitInSeat(seat) {
   	return authReqwest({
   		url: '/sitInSeat',

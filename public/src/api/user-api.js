@@ -21,15 +21,6 @@ class UserApi {
     });
   }
 
-  getAll() {
-    return authReqwest({
-      url: '/users',
-      method: 'GET',
-    }).then((resp) => {
-      return resp.users;
-    });
-  }
-
 }
 
 export default new UserApi();

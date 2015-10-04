@@ -22,16 +22,25 @@ schema.statics.create = function(opts, cb) {
   });
 };
 
-schema.methods.userSit = function userSit(user, cb) {
-  if (!this.user) {
-    this.user = user;
-    this.save((err) => {
-      if (err) cb(err);
-      cb(null, this);
-    });
-  } else {
-    return cb('A user is already sitting in seat!');
-  }
+schema.methods.userSit = function userSit(user) {
+
+  return new Promise((resolve, reject) => {
+
+    if (this.user) {
+
+      reject('A user is already sitting in this seat!');
+
+    } else {
+
+      this.user = user._id;
+      this.save((err) => {
+        if (err) reject(err);
+        resolve(user);
+      });
+
+    }
+
+  });
 
     // if (!this.table.hasUser(user.id)) { // removed method hasUser
     //   console.error('User is not at table. Cannot sit here.')

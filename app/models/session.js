@@ -1,31 +1,20 @@
 import mongoose from 'mongoose';
 import _ from 'lodash';
 
+import User from './user';
+import {tableSchema} from './table';
+
 function generateToken() {
   return `${_.random(1e10)}-${_.random(1e10)}-${_.random(1e10)}`;
 }
-
-let userSchema = mongoose.Schema({
-  id: Number,
-  name: String
-});
-
-userSchema.methods.changeName = function(name, cb) {
-  this.name = name;
-  this.save((err) => {
-    if (err) cb(err);
-    cb(null, this);
-  });
-};
-
-let User = mongoose.model('User', userSchema);
 
 let sessionSchema = mongoose.Schema({
   token: String,
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  tables: [tableSchema]
 });
 
 sessionSchema.statics.create = function() {

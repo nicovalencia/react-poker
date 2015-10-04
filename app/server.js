@@ -5,6 +5,7 @@ import _ from 'lodash';
 import bodyParser from 'body-parser';
 
 import {authorize} from './middleware/auth';
+import {fetchTable} from './middleware/fetch-table';
 import Database from './db/database';
 import Session from './models/session';
 import Table from './models/table';
@@ -23,59 +24,59 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/sessions', (req, res, next) => {
   Session.findOrCreate(req.body.token).then((session) => {
-    res.json({ session });
+
+    // (temporary) - assign main table to session:
+    session.tables = [_table];
+    session.save((err, session) => {
+      if (err) next(err);
+      res.json({ session });
+    });
+
   }).catch(next);
 });
 
-app.post('/changeName', authorize, (req, res, next) => {
-  let user = req.currentSession.user;
-  user.changeName(req.body.name, (err, updatedUser) => {
+// Table:
+
+app.get('/tables/:id', authorize, (req, res, next) => {
+  Table.findById(req.params.id, (err, table) => {
     if (err) next(err);
-    _table.broadcast('CHANGE_NAME', updatedUser);
-    res.json({ user: updatedUser })
+
+    table.addUser(req.currentSession.user).then((table) => {
+      res.json({ table });
+    });
+
   });
 });
+
+// RPC:
 
 app.get('/user', authorize, (req, res) => {
   res.json({ user: req.currentSession.user })
 });
 
-app.get('/users', (req, res, next) => {
-  Session.find()
-    .populate('user')
-    .exec((err, sessions) => {
-      if (err) next(err);
-      res.json({
-        users: _.pluck(sessions, 'user')
-      });
-    });
-});
-
-app.get('/seats', fetchTable, (req, res, next) => {
-  req.table.seats.find()
-    .populate('user')
-    .exec((err, seats) => {
-      if (err) next(err);
-      res.json({ seats });
-    });
-});
-
-app.post('/sitInSeat', authorize, (req, res, next) => {
-  _table.seats.findById(req.body.seat._id, (err, seat) => {
+app.post('/changeName', authorize, fetchTable, (req, res, next) => {
+  let user = req.currentSession.user;
+  user.changeName(req.body.name, (err, updatedUser) => {
     if (err) next(err);
-    seat.userSit(req.currentSession.user, (err) => {
-      if (err) {
-        res.status(500).json({ error: "Cannot sit in seat" });
-      } else {
-        res.json({ ok: true });
-      }
-    });
-
+    req.table.broadcast('CHANGE_NAME', updatedUser);
+    res.json({ user: updatedUser })
   });
 });
 
-app.post('/standUpFromSeat', (req, res, next) => {
-  _table.seats.findById(req.body.seat._id, (err, seat) => {
+app.post('/sitInSeat', authorize, fetchTable, (req, res, next) => {
+  let seat = req.table.seats.id(req.body.seat._id);
+  seat.userSit(req.currentSession.user).then((seat) => {
+    console.log(`> ${req.currentSession.user.name} sat in seat #${seat._id}`);
+    req.table.broadcast('USER_SIT', {
+      seat,
+      user: req.currentSession.user
+    });
+    res.json({ ok: true });
+  }).catch(next);
+});
+
+app.post('/standUpFromSeat', authorize, fetchTable, (req, res, next) => {
+  req.table.seats.findById(req.body.seat._id, (err, seat) => {
     if (err) next(err);
 
     seat.userStand((err) => {

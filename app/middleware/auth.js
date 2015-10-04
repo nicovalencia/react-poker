@@ -6,10 +6,10 @@ export function authorize(req, res, next) {
     .populate('user')
     .exec((err, session) => {
 
-      if (err) console.log(err);
+      if (err) next(err);
 
-      req.currentSession = session;
-      if (req.currentSession && req.currentSession.user) {
+      if (session && session.user) {
+        req.currentSession = session;
         return next();
       } else {
         return res.status(401).json({ error: "Unauthorized" });
